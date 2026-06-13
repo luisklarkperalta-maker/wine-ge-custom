@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04   # Noble
+    runs-on: ubuntu-24.04   # Noble only
 
     steps:
       - name: Checkout repository
