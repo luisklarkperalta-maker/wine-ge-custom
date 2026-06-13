@@ -1,14 +1,11 @@
-name: Build GE-Proton8-26-LoL (Jammy & Noble)
+name: Build GE-Proton8-26-LoL (Noble)
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        os: [ubuntu-22.04, ubuntu-24.04]   # Jammy and Noble
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-24.04   # Noble
 
     steps:
       - name: Checkout repository
@@ -75,8 +72,10 @@ jobs:
             libkrb5-dev libkrb5-dev:i386 \
             libunwind-dev libunwind-dev:i386 \
             libusb-1.0-0-dev libusb-1.0-0-dev:i386 \
-            libgstreamer1.0-dev libgstreamer1.0-dev:i386 \
-            libgstreamer-plugins-base1.0-dev libgstreamer-plugins-base1.0-dev:i386
+            libgstreamer1.0-dev \
+            libgstreamer-plugins-base1.0-dev \
+            libgstreamer1.0-0:i386 \
+            libgstreamer-plugins-base1.0-0:i386
 
       - name: Configure build
         run: |
@@ -92,11 +91,29 @@ jobs:
       - name: Package artifact
         run: |
           cd build
-          tar -czf ge-proton8-26-lol-${{ matrix.os }}.tar.gz *
-          mv ge-proton8-26-lol-${{ matrix.os }}.tar.gz $GITHUB_WORKSPACE/
+          tar -czf ge-proton8-26-lol-noble.tar.gz *
+          mv ge-proton8-26-lol-noble.tar.gz $GITHUB_WORKSPACE/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: GE-Proton8-26-LoL-${{ matrix.os }}
-          path: ge-proton8-26-lol-${{ matrix.os }}.tar.gz
+          name: GE-Proton8-26-LoL-Noble
+          path: ge-proton8-26-lol-noble.tar.gz
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ge-proton8-26-lol-noble-${{ github.run_number }}
+          name: GE-Proton8-26-LoL Noble Build ${{ github.run_number }}
+          files: artifacts/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
