@@ -1,11 +1,14 @@
-name: Build GE-Proton8-26-LoL
+name: Build GE-Proton8-26-LoL (Jammy & Noble)
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04   # Jammy (use ubuntu-24.04 for Noble)
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]   # Jammy and Noble
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout repository
@@ -89,11 +92,11 @@ jobs:
       - name: Package artifact
         run: |
           cd build
-          tar -czf ge-proton8-26-lol.tar.gz *
-          mv ge-proton8-26-lol.tar.gz $GITHUB_WORKSPACE/
+          tar -czf ge-proton8-26-lol-${{ matrix.os }}.tar.gz *
+          mv ge-proton8-26-lol-${{ matrix.os }}.tar.gz $GITHUB_WORKSPACE/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: GE-Proton8-26-LoL
-          path: ge-proton8-26-lol.tar.gz
+          name: GE-Proton8-26-LoL-${{ matrix.os }}
+          path: ge-proton8-26-lol-${{ matrix.os }}.tar.gz
