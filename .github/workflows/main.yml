@@ -1,11 +1,11 @@
-name: Build Wine-GE Custom
+name: Build GE-Proton8-26-LoL
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04   # Jammy
+    runs-on: ubuntu-22.04   # Jammy (use ubuntu-24.04 for Noble)
 
     steps:
       - name: Checkout repository
@@ -23,11 +23,18 @@ jobs:
           git add proton-wine
           git commit -m "Set Proton-Wine submodule to GE-Proton8-26-LoL" || true
 
+      - name: Prepare apt
+        run: |
+          sudo rm -rf /var/lib/apt/lists/*
+          sudo apt-get clean
+          sudo apt-get update --fix-missing
+          sudo apt-get -y upgrade
+
       - name: Install build dependencies
         run: |
           sudo dpkg --add-architecture i386
           sudo apt-get update
-          sudo apt-get install -y \
+          sudo apt-get install -y --fix-broken \
             build-essential gcc-multilib g++-multilib \
             flex bison cmake ninja-build \
             libfreetype6-dev libfreetype6-dev:i386 \
@@ -64,7 +71,9 @@ jobs:
             libldap2-dev libldap2-dev:i386 \
             libkrb5-dev libkrb5-dev:i386 \
             libunwind-dev libunwind-dev:i386 \
-            libusb-1.0-0-dev libusb-1.0-0-dev:i386
+            libusb-1.0-0-dev libusb-1.0-0-dev:i386 \
+            libgstreamer1.0-dev libgstreamer1.0-dev:i386 \
+            libgstreamer-plugins-base1.0-dev libgstreamer-plugins-base1.0-dev:i386
 
       - name: Configure build
         run: |
@@ -72,7 +81,7 @@ jobs:
           cd build
           ../configure --enable-win64
 
-      - name: Compile Wine-GE
+      - name: Compile GE-Proton8-26-LoL
         run: |
           cd build
           make -j$(nproc)
@@ -80,11 +89,11 @@ jobs:
       - name: Package artifact
         run: |
           cd build
-          tar -czf wine-ge-custom.tar.gz *
-          mv wine-ge-custom.tar.gz $GITHUB_WORKSPACE/
+          tar -czf ge-proton8-26-lol.tar.gz *
+          mv ge-proton8-26-lol.tar.gz $GITHUB_WORKSPACE/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: wine-ge-custom
-          path: wine-ge-custom.tar.gz
+          name: GE-Proton8-26-LoL
+          path: ge-proton8-26-lol.tar.gz
