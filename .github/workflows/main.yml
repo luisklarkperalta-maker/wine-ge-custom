@@ -69,6 +69,7 @@ jobs:
             libfontconfig1-dev libfontconfig1-dev:i386 \
             libpcap-dev libpcap-dev:i386 \
             libldap2-dev libldap2-dev:i386 \
+            libkrb5-dev libkrb5-dev:i386 \
             libunwind-dev libunwind-dev:i386 \
             libusb-1.0-0-dev libusb-1.0-0-dev:i386 \
             libgstreamer1.0-dev \
