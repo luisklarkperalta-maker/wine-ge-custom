@@ -1,0 +1,90 @@
+name: Build Wine-GE Custom
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04   # Jammy
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: Switch Proton-Wine submodule to GE-Proton8-26-LoL
+        run: |
+          cd proton-wine
+          git fetch origin
+          git checkout GE-Proton8-26-LoL
+          cd ..
+          git add proton-wine
+          git commit -m "Set Proton-Wine submodule to GE-Proton8-26-LoL" || true
+
+      - name: Install build dependencies
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential gcc-multilib g++-multilib \
+            flex bison cmake ninja-build \
+            libfreetype6-dev libfreetype6-dev:i386 \
+            libglib2.0-dev \
+            libgl1-mesa-dev libgl1-mesa-dev:i386 \
+            libx11-dev libx11-dev:i386 \
+            libxext-dev libxext-dev:i386 \
+            libxinerama-dev libxinerama-dev:i386 \
+            libxrandr-dev libxrandr-dev:i386 \
+            libxi-dev libxi-dev:i386 \
+            libxcursor-dev libxcursor-dev:i386 \
+            libxdamage-dev libxdamage-dev:i386 \
+            libxcomposite-dev libxcomposite-dev:i386 \
+            libxfixes-dev libxfixes-dev:i386 \
+            libxrender-dev libxrender-dev:i386 \
+            libxxf86vm-dev libxxf86vm-dev:i386 \
+            libxkbcommon-dev libxkbcommon-dev:i386 \
+            libvulkan-dev libvulkan-dev:i386 \
+            libudev-dev libudev-dev:i386 \
+            libasound2-dev libasound2-dev:i386 \
+            libpulse-dev libpulse-dev:i386 \
+            libdbus-1-dev libdbus-1-dev:i386 \
+            libgnutls28-dev libgnutls28-dev:i386 \
+            libjpeg-dev libjpeg-dev:i386 \
+            libpng-dev libpng-dev:i386 \
+            libtiff-dev libtiff-dev:i386 \
+            libgsm1-dev libgsm1-dev:i386 \
+            libmpg123-dev libmpg123-dev:i386 \
+            libopenal-dev libopenal-dev:i386 \
+            libncurses5-dev libncurses5-dev:i386 \
+            libncursesw5-dev libncursesw5-dev:i386 \
+            libfontconfig1-dev libfontconfig1-dev:i386 \
+            libpcap-dev libpcap-dev:i386 \
+            libldap2-dev libldap2-dev:i386 \
+            libkrb5-dev libkrb5-dev:i386 \
+            libunwind-dev libunwind-dev:i386 \
+            libusb-1.0-0-dev libusb-1.0-0-dev:i386
+
+      - name: Configure build
+        run: |
+          mkdir build
+          cd build
+          ../configure --enable-win64
+
+      - name: Compile Wine-GE
+        run: |
+          cd build
+          make -j$(nproc)
+
+      - name: Package artifact
+        run: |
+          cd build
+          tar -czf wine-ge-custom.tar.gz *
+          mv wine-ge-custom.tar.gz $GITHUB_WORKSPACE/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wine-ge-custom
+          path: wine-ge-custom.tar.gz
