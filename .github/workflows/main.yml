@@ -1,11 +1,11 @@
-name: Build Wine-GE Custom (GE-Proton8-26-LoL)
+name: Build GE-Proton8-26-LoL (Noble)
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04   # Jammy
+    runs-on: ubuntu-24.04   # Noble only
 
     steps:
       - name: Checkout repository
@@ -23,15 +23,22 @@ jobs:
           git add proton-wine
           git commit -m "Set Proton-Wine submodule to GE-Proton8-26-LoL" || true
 
+      - name: Prepare apt
+        run: |
+          sudo rm -rf /var/lib/apt/lists/*
+          sudo apt-get clean
+          sudo apt-get update --fix-missing
+          sudo apt-get -y upgrade
+
       - name: Install build dependencies
         run: |
           sudo dpkg --add-architecture i386
           sudo apt-get update
           sudo apt-get install -y --fix-broken \
             build-essential gcc-multilib g++-multilib \
-            flex bison cmake ninja-build \
+            flex bison cmake ninja-build autoconf automake libtool \
             libfreetype6-dev libfreetype6-dev:i386 \
-            libglib2.0-dev \
+            libglib2.0-dev libglib2.0-0:i386 \
             libgl1-mesa-dev libgl1-mesa-dev:i386 \
             libx11-dev libx11-dev:i386 \
             libxext-dev libxext-dev:i386 \
@@ -64,16 +71,22 @@ jobs:
             libldap2-dev libldap2-dev:i386 \
             libunwind-dev libunwind-dev:i386 \
             libusb-1.0-0-dev libusb-1.0-0-dev:i386 \
-            libgstreamer1.0-dev libgstreamer1.0-dev:i386 \
-            libgstreamer-plugins-base1.0-dev libgstreamer-plugins-base1.0-dev:i386
+            libgstreamer1.0-dev \
+            libgstreamer-plugins-base1.0-dev \
+            libgstreamer1.0-0:i386 \
+            libgstreamer-plugins-base1.0-0:i386
 
       - name: Configure build
         run: |
+          # Generate configure script if missing
+          if [ ! -f configure ]; then
+            autoreconf -i
+          fi
           mkdir build
           cd build
           ../configure --enable-win64
 
-      - name: Compile Wine-GE
+      - name: Compile GE-Proton8-26-LoL
         run: |
           cd build
           make -j$(nproc)
@@ -81,11 +94,29 @@ jobs:
       - name: Package artifact
         run: |
           cd build
-          tar -czf ge-proton8-26-lol.tar.gz *
-          mv ge-proton8-26-lol.tar.gz $GITHUB_WORKSPACE/
+          tar -czf ge-proton8-26-lol-noble.tar.gz *
+          mv ge-proton8-26-lol-noble.tar.gz $GITHUB_WORKSPACE/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: GE-Proton8-26-LoL
-          path: ge-proton8-26-lol.tar.gz
+          name: GE-Proton8-26-LoL-Noble
+          path: ge-proton8-26-lol-noble.tar.gz
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ge-proton8-26-lol-noble-${{ github.run_number }}
+          name: GE-Proton8-26-LoL Noble Build ${{ github.run_number }}
+          files: artifacts/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
